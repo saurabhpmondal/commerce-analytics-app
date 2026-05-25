@@ -2,45 +2,120 @@ import {
   fetchDashboardMetrics
 } from './services/supabase/analyticsService.js';
 
+import { state }
+from './core/state.js';
+
+let rawData = [];
+
 async function initializeApp() {
 
-  const data =
+  rawData =
     await fetchDashboardMetrics();
 
   console.log(
     'Dashboard Metrics:',
-    data
+    rawData
   );
 
-  const grossUnits =
-    data.reduce(
-      (sum, row) =>
-        sum + Number(row.total_units || 0),
-      0
-    );
+  renderApp();
+}
 
-  const grossGMV =
-    data.reduce(
-      (sum, row) =>
-        sum + Number(row.total_sales || 0),
-      0
-    );
+/* FILTER LOGIC */
 
-  const sjitStock =
-    data.reduce(
-      (sum, row) =>
-        sum + Number(row.total_fc_stock || 0),
-      0
-    );
+function getFilteredData() {
 
-  const sorStock =
-    data.reduce(
-      (sum, row) =>
-        sum + Number(row.total_seller_stock || 0),
-      0
-    );
+  let filtered =
+    [...rawData];
 
-  /* BRAND SUMMARY */
+  /* BRAND */
+
+  if (
+    state.filters.brand !==
+    'All Brands'
+  ) {
+
+    filtered = filtered.filter(
+      row =>
+        row.brand ===
+        state.filters.brand
+    );
+  }
+
+  /* SEARCH */
+
+  if (
+    state.filters.search.trim()
+  ) {
+
+    const search =
+      state.filters.search
+        .toLowerCase();
+
+    filtered = filtered.filter(
+      row =>
+
+        String(row.style_id)
+          .toLowerCase()
+          .includes(search)
+
+        ||
+
+        String(row.brand)
+          .toLowerCase()
+          .includes(search)
+    );
+  }
+
+  return filtered;
+}
+
+/* KPI CALCULATIONS */
+
+function calculateKPIs(data) {
+
+  return {
+
+    grossUnits:
+      data.reduce(
+        (sum, row) =>
+          sum +
+          Number(row.total_units || 0),
+        0
+      ),
+
+    grossGMV:
+      data.reduce(
+        (sum, row) =>
+          sum +
+          Number(row.total_sales || 0),
+        0
+      ),
+
+    sjitStock:
+      data.reduce(
+        (sum, row) =>
+          sum +
+          Number(
+            row.total_fc_stock || 0
+          ),
+        0
+      ),
+
+    sorStock:
+      data.reduce(
+        (sum, row) =>
+          sum +
+          Number(
+            row.total_seller_stock || 0
+          ),
+        0
+      )
+  };
+}
+
+/* BRAND SUMMARY */
+
+function calculateBrandSummary(data) {
 
   const brandMap = {};
 
@@ -49,10 +124,15 @@ async function initializeApp() {
     if (!brandMap[row.brand]) {
 
       brandMap[row.brand] = {
+
         brand: row.brand,
+
         units: 0,
+
         gmv: 0,
+
         sjit: 0,
+
         sor: 0
       };
     }
@@ -67,11 +147,33 @@ async function initializeApp() {
       Number(row.total_fc_stock || 0);
 
     brandMap[row.brand].sor +=
-      Number(row.total_seller_stock || 0);
+      Number(
+        row.total_seller_stock || 0
+      );
   });
 
+  return Object.values(brandMap);
+}
+
+/* RENDER */
+
+function renderApp() {
+
+  const data =
+    getFilteredData();
+
+  const kpis =
+    calculateKPIs(data);
+
   const brandSummary =
-    Object.values(brandMap);
+    calculateBrandSummary(data);
+
+  const brands =
+    [
+      ...new Set(
+        rawData.map(row => row.brand)
+      )
+    ];
 
   const app =
     document.getElementById('app');
@@ -106,11 +208,13 @@ async function initializeApp() {
 
       </header>
 
-      <!-- FILTER BAR -->
+      <!-- FILTERS -->
 
       <section class="filter-bar">
 
         <div class="filter-grid">
+
+          <!-- DATE -->
 
           <div class="filter-group">
 
@@ -118,7 +222,10 @@ async function initializeApp() {
               Date Range
             </label>
 
-            <select class="filter-control">
+            <select
+              id="dateFilter"
+              class="filter-control"
+            >
 
               <option>
                 Yesterday
@@ -144,53 +251,43 @@ async function initializeApp() {
 
           </div>
 
+          <!-- BRAND -->
+
           <div class="filter-group">
 
             <label class="filter-label">
               Brand
             </label>
 
-            <select class="filter-control">
+            <select
+              id="brandFilter"
+              class="filter-control"
+            >
 
               <option>
                 All Brands
               </option>
 
-            </select>
+              ${brands.map(brand => `
 
-          </div>
+                <option
+                  ${
+                    brand ===
+                    state.filters.brand
+                    ? 'selected'
+                    : ''
+                  }
+                >
+                  ${brand}
+                </option>
 
-          <div class="filter-group">
-
-            <label class="filter-label">
-              ERP Status
-            </label>
-
-            <select class="filter-control">
-
-              <option>
-                All Status
-              </option>
-
-            </select>
-
-          </div>
-
-          <div class="filter-group">
-
-            <label class="filter-label">
-              Article Type
-            </label>
-
-            <select class="filter-control">
-
-              <option>
-                All Article Types
-              </option>
+              `).join('')}
 
             </select>
 
           </div>
+
+          <!-- SEARCH -->
 
           <div class="filter-group">
 
@@ -199,9 +296,16 @@ async function initializeApp() {
             </label>
 
             <input
+              id="searchFilter"
+
               class="filter-control"
+
               placeholder="
-                STYLE ID / ERP SKU
+                STYLE ID / BRAND
+              "
+
+              value="
+                ${state.filters.search}
               "
             />
 
@@ -211,9 +315,11 @@ async function initializeApp() {
 
       </section>
 
-      <!-- KPI -->
+      <!-- CONTENT -->
 
       <main class="content">
+
+        <!-- KPI -->
 
         <div class="kpi-grid">
 
@@ -224,8 +330,9 @@ async function initializeApp() {
             </div>
 
             <div class="kpi-value">
-              ${Math.round(grossUnits)
-                .toLocaleString()}
+              ${Math.round(
+                kpis.grossUnits
+              ).toLocaleString()}
             </div>
 
           </div>
@@ -237,8 +344,9 @@ async function initializeApp() {
             </div>
 
             <div class="kpi-value">
-              ₹${Math.round(grossGMV)
-                .toLocaleString()}
+              ₹${Math.round(
+                kpis.grossGMV
+              ).toLocaleString()}
             </div>
 
           </div>
@@ -250,8 +358,9 @@ async function initializeApp() {
             </div>
 
             <div class="kpi-value">
-              ${Math.round(sjitStock)
-                .toLocaleString()}
+              ${Math.round(
+                kpis.sjitStock
+              ).toLocaleString()}
             </div>
 
           </div>
@@ -263,8 +372,9 @@ async function initializeApp() {
             </div>
 
             <div class="kpi-value">
-              ${Math.round(sorStock)
-                .toLocaleString()}
+              ${Math.round(
+                kpis.sorStock
+              ).toLocaleString()}
             </div>
 
           </div>
@@ -297,10 +407,6 @@ async function initializeApp() {
 
             <button class="tab-btn">
               Planning
-            </button>
-
-            <button class="tab-btn">
-              Ratings
             </button>
 
           </div>
@@ -348,13 +454,15 @@ async function initializeApp() {
                     <td>${row.brand}</td>
 
                     <td>
-                      ₹${Math.round(row.gmv)
-                        .toLocaleString()}
+                      ₹${Math.round(
+                        row.gmv
+                      ).toLocaleString()}
                     </td>
 
                     <td>
-                      ${Math.round(row.units)
-                        .toLocaleString()}
+                      ${Math.round(
+                        row.units
+                      ).toLocaleString()}
                     </td>
 
                     <td>
@@ -365,13 +473,15 @@ async function initializeApp() {
                     </td>
 
                     <td>
-                      ${Math.round(row.sjit)
-                        .toLocaleString()}
+                      ${Math.round(
+                        row.sjit
+                      ).toLocaleString()}
                     </td>
 
                     <td>
-                      ${Math.round(row.sor)
-                        .toLocaleString()}
+                      ${Math.round(
+                        row.sor
+                      ).toLocaleString()}
                     </td>
 
                   </tr>
@@ -390,6 +500,65 @@ async function initializeApp() {
 
     </div>
   `;
+
+  attachEvents();
+}
+
+/* EVENTS */
+
+function attachEvents() {
+
+  /* BRAND */
+
+  document
+    .getElementById(
+      'brandFilter'
+    )
+    .addEventListener(
+      'change',
+      e => {
+
+        state.filters.brand =
+          e.target.value;
+
+        renderApp();
+      }
+    );
+
+  /* SEARCH */
+
+  document
+    .getElementById(
+      'searchFilter'
+    )
+    .addEventListener(
+      'input',
+      debounce(e => {
+
+        state.filters.search =
+          e.target.value;
+
+        renderApp();
+
+      }, 300)
+    );
+}
+
+/* DEBOUNCE */
+
+function debounce(fn, delay) {
+
+  let timeout;
+
+  return (...args) => {
+
+    clearTimeout(timeout);
+
+    timeout = setTimeout(
+      () => fn(...args),
+      delay
+    );
+  };
 }
 
 initializeApp();
