@@ -1,0 +1,1 @@
+console.log('Commerce Analytics App Initialized');
