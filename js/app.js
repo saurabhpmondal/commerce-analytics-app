@@ -7,6 +7,10 @@ from './core/state.js';
 
 let rawData = [];
 
+/* =========================
+   INIT
+========================= */
+
 async function initializeApp() {
 
   rawData =
@@ -17,15 +21,18 @@ async function initializeApp() {
     rawData
   );
 
-  renderApp();
+  renderDashboard();
 }
 
-/* FILTER LOGIC */
+initializeApp();
+
+/* =========================
+   FILTER DATA
+========================= */
 
 function getFilteredData() {
 
-  let filtered =
-    [...rawData];
+  let filtered = [...rawData];
 
   /* BRAND */
 
@@ -38,6 +45,34 @@ function getFilteredData() {
       row =>
         row.brand ===
         state.filters.brand
+    );
+  }
+
+  /* ARTICLE TYPE */
+
+  if (
+    state.filters.articleType !==
+    'All Article Types'
+  ) {
+
+    filtered = filtered.filter(
+      row =>
+        row.article_type ===
+        state.filters.articleType
+    );
+  }
+
+  /* ERP STATUS */
+
+  if (
+    state.filters.erpStatus !==
+    'All Status'
+  ) {
+
+    filtered = filtered.filter(
+      row =>
+        row.erp_status ===
+        state.filters.erpStatus
     );
   }
 
@@ -54,13 +89,13 @@ function getFilteredData() {
     filtered = filtered.filter(
       row =>
 
-        String(row.style_id)
+        String(row.style_id || '')
           .toLowerCase()
           .includes(search)
 
         ||
 
-        String(row.brand)
+        String(row.erp_sku || '')
           .toLowerCase()
           .includes(search)
     );
@@ -69,13 +104,16 @@ function getFilteredData() {
   return filtered;
 }
 
-/* KPI CALCULATIONS */
+/* =========================
+   KPI CALCULATIONS
+========================= */
 
 function calculateKPIs(data) {
 
   return {
 
     grossUnits:
+
       data.reduce(
         (sum, row) =>
           sum +
@@ -84,6 +122,7 @@ function calculateKPIs(data) {
       ),
 
     grossGMV:
+
       data.reduce(
         (sum, row) =>
           sum +
@@ -91,7 +130,17 @@ function calculateKPIs(data) {
         0
       ),
 
+    totalReturns:
+
+      data.reduce(
+        (sum, row) =>
+          sum +
+          Number(row.total_returns || 0),
+        0
+      ),
+
     sjitStock:
+
       data.reduce(
         (sum, row) =>
           sum +
@@ -100,28 +149,53 @@ function calculateKPIs(data) {
       ),
 
     sorStock:
+
       data.reduce(
         (sum, row) =>
           sum +
           Number(row.sor_stock || 0),
         0
-      )
+      ),
+
+    avgRating:
+
+      data.length
+
+        ? (
+
+          data.reduce(
+            (sum, row) =>
+              sum +
+              Number(row.avg_rating || 0),
+            0
+          )
+
+          / data.length
+
+        ).toFixed(1)
+
+        : '0'
   };
 }
 
-/* BRAND SUMMARY */
+/* =========================
+   BRAND SUMMARY
+========================= */
 
 function calculateBrandSummary(data) {
 
-  const brandMap = {};
+  const map = {};
 
   data.forEach(row => {
 
-    if (!brandMap[row.brand]) {
+    const brand =
+      row.brand || 'Unknown';
 
-      brandMap[row.brand] = {
+    if (!map[brand]) {
 
-        brand: row.brand,
+      map[brand] = {
+
+        brand,
 
         units: 0,
 
@@ -133,25 +207,83 @@ function calculateBrandSummary(data) {
       };
     }
 
-    brandMap[row.brand].units +=
+    map[brand].units +=
       Number(row.total_units || 0);
 
-    brandMap[row.brand].gmv +=
+    map[brand].gmv +=
       Number(row.total_sales || 0);
 
-    brandMap[row.brand].sjit +=
+    map[brand].sjit +=
       Number(row.sjit_stock || 0);
 
-    brandMap[row.brand].sor +=
+    map[brand].sor +=
       Number(row.sor_stock || 0);
   });
 
-  return Object.values(brandMap);
+  return Object.values(map)
+    .sort((a, b) => b.gmv - a.gmv);
 }
 
-/* RENDER */
+/* =========================
+   ARTICLE SUMMARY
+========================= */
 
-function renderApp() {
+function calculateArticleSummary(data) {
+
+  const map = {};
+
+  data.forEach(row => {
+
+    const article =
+      row.article_type || 'Unknown';
+
+    if (!map[article]) {
+
+      map[article] = {
+
+        article,
+
+        units: 0,
+
+        gmv: 0
+      };
+    }
+
+    map[article].units +=
+      Number(row.total_units || 0);
+
+    map[article].gmv +=
+      Number(row.total_sales || 0);
+  });
+
+  return Object.values(map)
+    .sort((a, b) => b.gmv - a.gmv);
+}
+
+/* =========================
+   FILTER OPTIONS
+========================= */
+
+function getUniqueValues(key) {
+
+  return [
+
+    ...new Set(
+
+      rawData
+        .map(row => row[key])
+        .filter(Boolean)
+
+    )
+
+  ].sort();
+}
+
+/* =========================
+   RENDER
+========================= */
+
+function renderDashboard() {
 
   const data =
     getFilteredData();
@@ -162,12 +294,17 @@ function renderApp() {
   const brandSummary =
     calculateBrandSummary(data);
 
+  const articleSummary =
+    calculateArticleSummary(data);
+
   const brands =
-    [
-      ...new Set(
-        rawData.map(row => row.brand)
-      )
-    ];
+    getUniqueValues('brand');
+
+  const articleTypes =
+    getUniqueValues('article_type');
+
+  const erpStatuses =
+    getUniqueValues('erp_status');
 
   const app =
     document.getElementById('app');
@@ -193,7 +330,7 @@ function renderApp() {
             </div>
 
             <div class="header-sub">
-              Marketplace Analytics Engine
+              Marketplace Command Center
             </div>
 
           </div>
@@ -266,10 +403,10 @@ function renderApp() {
 
                 <option
                   ${
-                    brand ===
-                    state.filters.brand
-                    ? 'selected'
-                    : ''
+                    state.filters.brand ===
+                    brand
+                      ? 'selected'
+                      : ''
                   }
                 >
                   ${brand}
@@ -290,12 +427,28 @@ function renderApp() {
             </label>
 
             <select
+              id="erpStatusFilter"
               class="filter-control"
             >
 
               <option>
                 All Status
               </option>
+
+              ${erpStatuses.map(status => `
+
+                <option
+                  ${
+                    state.filters.erpStatus ===
+                    status
+                      ? 'selected'
+                      : ''
+                  }
+                >
+                  ${status}
+                </option>
+
+              `).join('')}
 
             </select>
 
@@ -310,12 +463,28 @@ function renderApp() {
             </label>
 
             <select
+              id="articleTypeFilter"
               class="filter-control"
             >
 
               <option>
                 All Article Types
               </option>
+
+              ${articleTypes.map(type => `
+
+                <option
+                  ${
+                    state.filters.articleType ===
+                    type
+                      ? 'selected'
+                      : ''
+                  }
+                >
+                  ${type}
+                </option>
+
+              `).join('')}
 
             </select>
 
@@ -388,6 +557,20 @@ function renderApp() {
           <div class="card">
 
             <div class="kpi-title">
+              Returns
+            </div>
+
+            <div class="kpi-value">
+              ${Math.round(
+                kpis.totalReturns
+              ).toLocaleString()}
+            </div>
+
+          </div>
+
+          <div class="card">
+
+            <div class="kpi-title">
               SJIT Stock
             </div>
 
@@ -409,6 +592,18 @@ function renderApp() {
               ${Math.round(
                 kpis.sorStock
               ).toLocaleString()}
+            </div>
+
+          </div>
+
+          <div class="card">
+
+            <div class="kpi-title">
+              Avg Rating
+            </div>
+
+            <div class="kpi-value">
+              ${kpis.avgRating}
             </div>
 
           </div>
@@ -451,7 +646,7 @@ function renderApp() {
 
         </div>
 
-        <!-- BRAND TABLE -->
+        <!-- BRAND SUMMARY -->
 
         <div class="card">
 
@@ -534,6 +729,76 @@ function renderApp() {
 
         </div>
 
+        <!-- ARTICLE SUMMARY -->
+
+        <div
+          class="card"
+          style="margin-top:16px;"
+        >
+
+          <div class="section-title">
+            Article Summary
+          </div>
+
+          <div class="table-wrapper">
+
+            <table class="summary-table">
+
+              <thead>
+
+                <tr>
+
+                  <th>Article Type</th>
+
+                  <th>GMV</th>
+
+                  <th>Units</th>
+
+                  <th>ASP</th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                ${articleSummary.map(row => `
+
+                  <tr>
+
+                    <td>${row.article}</td>
+
+                    <td>
+                      ₹${Math.round(
+                        row.gmv
+                      ).toLocaleString()}
+                    </td>
+
+                    <td>
+                      ${Math.round(
+                        row.units
+                      ).toLocaleString()}
+                    </td>
+
+                    <td>
+                      ₹${Math.round(
+                        row.gmv /
+                        (row.units || 1)
+                      ).toLocaleString()}
+                    </td>
+
+                  </tr>
+
+                `).join('')}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
       </main>
 
     </div>
@@ -542,7 +807,9 @@ function renderApp() {
   attachEvents();
 }
 
-/* EVENTS */
+/* =========================
+   EVENTS
+========================= */
 
 function attachEvents() {
 
@@ -559,7 +826,41 @@ function attachEvents() {
         state.filters.brand =
           e.target.value;
 
-        renderApp();
+        renderDashboard();
+      }
+    );
+
+  /* ERP STATUS */
+
+  document
+    .getElementById(
+      'erpStatusFilter'
+    )
+    .addEventListener(
+      'change',
+      e => {
+
+        state.filters.erpStatus =
+          e.target.value;
+
+        renderDashboard();
+      }
+    );
+
+  /* ARTICLE TYPE */
+
+  document
+    .getElementById(
+      'articleTypeFilter'
+    )
+    .addEventListener(
+      'change',
+      e => {
+
+        state.filters.articleType =
+          e.target.value;
+
+        renderDashboard();
       }
     );
 
@@ -576,13 +877,15 @@ function attachEvents() {
         state.filters.search =
           e.target.value;
 
-        renderApp();
+        renderDashboard();
 
       }, 300)
     );
 }
 
-/* DEBOUNCE */
+/* =========================
+   DEBOUNCE
+========================= */
 
 function debounce(fn, delay) {
 
@@ -598,5 +901,3 @@ function debounce(fn, delay) {
     );
   };
 }
-
-initializeApp();
