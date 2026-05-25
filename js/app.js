@@ -95,9 +95,7 @@ function calculateKPIs(data) {
       data.reduce(
         (sum, row) =>
           sum +
-          Number(
-            row.total_fc_stock || 0
-          ),
+          Number(row.sjit_stock || 0),
         0
       ),
 
@@ -105,9 +103,7 @@ function calculateKPIs(data) {
       data.reduce(
         (sum, row) =>
           sum +
-          Number(
-            row.total_seller_stock || 0
-          ),
+          Number(row.sor_stock || 0),
         0
       )
   };
@@ -144,12 +140,10 @@ function calculateBrandSummary(data) {
       Number(row.total_sales || 0);
 
     brandMap[row.brand].sjit +=
-      Number(row.total_fc_stock || 0);
+      Number(row.sjit_stock || 0);
 
     brandMap[row.brand].sor +=
-      Number(
-        row.total_seller_stock || 0
-      );
+      Number(row.sor_stock || 0);
   });
 
   return Object.values(brandMap);
@@ -287,6 +281,46 @@ function renderApp() {
 
           </div>
 
+          <!-- ERP STATUS -->
+
+          <div class="filter-group">
+
+            <label class="filter-label">
+              ERP Status
+            </label>
+
+            <select
+              class="filter-control"
+            >
+
+              <option>
+                All Status
+              </option>
+
+            </select>
+
+          </div>
+
+          <!-- ARTICLE TYPE -->
+
+          <div class="filter-group">
+
+            <label class="filter-label">
+              Article Type
+            </label>
+
+            <select
+              class="filter-control"
+            >
+
+              <option>
+                All Article Types
+              </option>
+
+            </select>
+
+          </div>
+
           <!-- SEARCH -->
 
           <div class="filter-group">
@@ -301,7 +335,7 @@ function renderApp() {
               class="filter-control"
 
               placeholder="
-                STYLE ID / BRAND
+                STYLE ID / ERP SKU
               "
 
               value="
@@ -407,6 +441,10 @@ function renderApp() {
 
             <button class="tab-btn">
               Planning
+            </button>
+
+            <button class="tab-btn">
+              Ratings
             </button>
 
           </div>
