@@ -1,0 +1,24 @@
+.kpi-title {
+
+  font-size: 14px;
+
+  color: var(--secondary-text);
+
+  margin-bottom: 12px;
+}
+
+.kpi-value {
+
+  font-size: 30px;
+
+  font-weight: 700;
+}
+
+.section-title {
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  margin-bottom: 18px;
+}
