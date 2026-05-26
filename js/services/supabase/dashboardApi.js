@@ -101,7 +101,7 @@ export async function fetchListingMapping() {
     const { data, error } =
       await supabase
 
-        .schema('catalog')
+        .schema('marketplace')
 
         .from('listing_mapping')
 
@@ -143,12 +143,10 @@ export async function fetchFcStock() {
 
   try {
 
-    /* GET LATEST DATE */
-
     const { data: latestDateData } =
       await supabase
 
-        .schema('inventory')
+        .schema('marketplace')
 
         .from('fc_stock')
 
@@ -168,12 +166,10 @@ export async function fetchFcStock() {
       return [];
     }
 
-    /* FETCH STOCK */
-
     const { data, error } =
       await supabase
 
-        .schema('inventory')
+        .schema('marketplace')
 
         .from('fc_stock')
 
@@ -215,12 +211,10 @@ export async function fetchRatings() {
 
   try {
 
-    /* GET LATEST DATE */
-
     const { data: latestDateData } =
       await supabase
 
-        .schema('quality')
+        .schema('marketplace')
 
         .from('ratings')
 
@@ -240,12 +234,10 @@ export async function fetchRatings() {
       return [];
     }
 
-    /* FETCH RATINGS */
-
     const { data, error } =
       await supabase
 
-        .schema('quality')
+        .schema('marketplace')
 
         .from('ratings')
 
