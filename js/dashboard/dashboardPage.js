@@ -30,6 +30,10 @@ import {
 } from './dashboardKPIs.js';
 
 import {
+  renderDashboardTabs
+} from './dashboardTabs.js';
+
+import {
   renderBrandTable
 } from './dashboardBrandTable.js';
 
@@ -46,22 +50,35 @@ export async function initializeDashboardPage() {
   store.rawData =
     await fetchDashboardMetrics();
 
+  console.log(
+    'Dashboard Data:',
+    store.rawData
+  );
+
   renderDashboardPage();
 }
 
 export function renderDashboardPage() {
 
-  const data =
-    getFilteredData(store.rawData);
+  const filteredData =
+    getFilteredData(
+      store.rawData
+    );
 
   const kpis =
-    calculateKPIs(data);
+    calculateKPIs(
+      filteredData
+    );
 
   const brandSummary =
-    calculateBrandSummary(data);
+    calculateBrandSummary(
+      filteredData
+    );
 
   const articleSummary =
-    calculateArticleSummary(data);
+    calculateArticleSummary(
+      filteredData
+    );
 
   const app =
     document.getElementById('app');
@@ -69,6 +86,8 @@ export function renderDashboardPage() {
   app.innerHTML = `
 
     <div class="app-layout">
+
+      <!-- HEADER -->
 
       <header class="header">
 
@@ -94,47 +113,33 @@ export function renderDashboardPage() {
 
       </header>
 
+      <!-- FILTERS -->
+
       ${renderDashboardFilters(
         store.rawData
       )}
 
+      <!-- CONTENT -->
+
       <main class="content">
 
-        ${renderDashboardKPIs(kpis)}
+        <!-- KPI -->
 
-        <div class="tabs-wrapper">
+        ${renderDashboardKPIs(
+          kpis
+        )}
 
-          <div class="tabs-bar">
+        <!-- TABS -->
 
-            <button
-              class="tab-btn active"
-            >
-              Dashboard
-            </button>
+        ${renderDashboardTabs()}
 
-            <button class="tab-btn">
-              Sales
-            </button>
-
-            <button class="tab-btn">
-              Returns
-            </button>
-
-            <button class="tab-btn">
-              Inventory
-            </button>
-
-            <button class="tab-btn">
-              Planning
-            </button>
-
-          </div>
-
-        </div>
+        <!-- BRAND -->
 
         ${renderBrandTable(
           brandSummary
         )}
+
+        <!-- ARTICLE -->
 
         ${renderArticleTable(
           articleSummary
