@@ -1,6 +1,20 @@
 import {
-  fetchDashboardMetrics
+
+  fetchSalesData,
+
+  fetchReturnsData,
+
+  fetchListingMapping,
+
+  fetchFcStock,
+
+  fetchRatings
+
 } from '../services/supabase/dashboardApi.js';
+
+import {
+  buildDashboardDataset
+} from '../services/supabase/transformService.js';
 
 import { store }
 from '../core/store.js';
@@ -47,11 +61,57 @@ import {
 
 export async function initializeDashboardPage() {
 
+  const [
+
+    sales,
+
+    returns,
+
+    mapping,
+
+    fcStock,
+
+    ratings
+
+  ] = await Promise.all([
+
+    fetchSalesData(),
+
+    fetchReturnsData(),
+
+    fetchListingMapping(),
+
+    fetchFcStock(),
+
+    fetchRatings()
+  ]);
+
+  store.sales = sales;
+
+  store.returns = returns;
+
+  store.mapping = mapping;
+
+  store.fcStock = fcStock;
+
+  store.ratings = ratings;
+
   store.rawData =
-    await fetchDashboardMetrics();
+    buildDashboardDataset({
+
+      sales,
+
+      returns,
+
+      mapping,
+
+      fcStock,
+
+      ratings
+    });
 
   console.log(
-    'Dashboard Data:',
+    'Dashboard Dataset:',
     store.rawData
   );
 
@@ -87,8 +147,6 @@ export function renderDashboardPage() {
 
     <div class="app-layout">
 
-      <!-- HEADER -->
-
       <header class="header">
 
         <div class="header-left">
@@ -113,33 +171,21 @@ export function renderDashboardPage() {
 
       </header>
 
-      <!-- FILTERS -->
-
       ${renderDashboardFilters(
         store.rawData
       )}
 
-      <!-- CONTENT -->
-
       <main class="content">
-
-        <!-- KPI -->
 
         ${renderDashboardKPIs(
           kpis
         )}
 
-        <!-- TABS -->
-
         ${renderDashboardTabs()}
-
-        <!-- BRAND -->
 
         ${renderBrandTable(
           brandSummary
         )}
-
-        <!-- ARTICLE -->
 
         ${renderArticleTable(
           articleSummary
