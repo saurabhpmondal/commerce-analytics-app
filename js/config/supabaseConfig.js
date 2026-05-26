@@ -1,5 +1,0 @@
-export const SUPABASE_URL =
-  'https://mkaypthahezxsjldbvnf.supabase.co';
-
-export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rYXlwdGhhaGV6eHNqbGRidm5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNjIwOTcsImV4cCI6MjA5NDgzODA5N30.Z8Ptzy-laj_pXGPTrymZk0XIdD-p4qDVYMCgFAs6EEM';
