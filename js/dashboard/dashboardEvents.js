@@ -10,7 +10,28 @@ import {
 
 export function attachDashboardEvents() {
 
-  /* BRAND */
+  /* =========================
+     DATE FILTER
+  ========================= */
+
+  document
+    .getElementById(
+      'dateFilter'
+    )
+    .addEventListener(
+      'change',
+      e => {
+
+        state.filters.dateRange =
+          e.target.value;
+
+        renderDashboardPage();
+      }
+    );
+
+  /* =========================
+     BRAND
+  ========================= */
 
   document
     .getElementById(
@@ -27,7 +48,9 @@ export function attachDashboardEvents() {
       }
     );
 
-  /* ERP STATUS */
+  /* =========================
+     ERP STATUS
+  ========================= */
 
   document
     .getElementById(
@@ -44,7 +67,9 @@ export function attachDashboardEvents() {
       }
     );
 
-  /* ARTICLE TYPE */
+  /* =========================
+     ARTICLE TYPE
+  ========================= */
 
   document
     .getElementById(
@@ -61,7 +86,9 @@ export function attachDashboardEvents() {
       }
     );
 
-  /* SEARCH */
+  /* =========================
+     SEARCH
+  ========================= */
 
   document
     .getElementById(
