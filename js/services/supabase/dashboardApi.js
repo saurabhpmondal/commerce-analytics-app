@@ -9,13 +9,17 @@ export async function fetchSalesData() {
 
   try {
 
-    const { data, error } =
-      await supabase
+    const [
 
-        .schema('reporting')
+      currentResult,
 
-        .from('sales_all')
+      historicalResult
 
+    ] = await Promise.all([
+
+      supabase
+        .schema('analytics')
+        .from('sales_current')
         .select(`
           order_date,
           style_id,
@@ -24,20 +28,42 @@ export async function fetchSalesData() {
           qty,
           final_amount
         `)
+        .limit(50000),
 
-        .limit(50000);
+      supabase
+        .schema('analytics')
+        .from('sales_historical')
+        .select(`
+          order_date,
+          style_id,
+          brand,
+          article_type,
+          qty,
+          final_amount
+        `)
+        .limit(50000)
+    ]);
 
-    if (error) {
+    if (
+      currentResult.error ||
+      historicalResult.error
+    ) {
 
       console.error(
         'Sales Fetch Error:',
-        error
+        currentResult.error ||
+        historicalResult.error
       );
 
       return [];
     }
 
-    return data || [];
+    return [
+
+      ...(currentResult.data || []),
+
+      ...(historicalResult.data || [])
+    ];
 
   } catch (err) {
 
@@ -55,32 +81,55 @@ export async function fetchReturnsData() {
 
   try {
 
-    const { data, error } =
-      await supabase
+    const [
 
-        .schema('reporting')
+      currentResult,
 
-        .from('returns_all')
+      historicalResult
 
+    ] = await Promise.all([
+
+      supabase
+        .schema('analytics')
+        .from('returns_current')
         .select(`
           return_date,
           style_id,
           order_line_id
         `)
+        .limit(50000),
 
-        .limit(50000);
+      supabase
+        .schema('analytics')
+        .from('returns_historical')
+        .select(`
+          return_date,
+          style_id,
+          order_line_id
+        `)
+        .limit(50000)
+    ]);
 
-    if (error) {
+    if (
+      currentResult.error ||
+      historicalResult.error
+    ) {
 
       console.error(
         'Returns Fetch Error:',
-        error
+        currentResult.error ||
+        historicalResult.error
       );
 
       return [];
     }
 
-    return data || [];
+    return [
+
+      ...(currentResult.data || []),
+
+      ...(historicalResult.data || [])
+    ];
 
   } catch (err) {
 
@@ -109,8 +158,7 @@ export async function fetchListingMapping() {
           style_id,
           erp_sku,
           brand,
-          article_type,
-          erp_status
+          article_type
         `)
 
         .limit(50000);
@@ -136,6 +184,52 @@ export async function fetchListingMapping() {
 }
 
 /* =========================
+   PRODUCT MASTER
+========================= */
+
+export async function fetchProductMaster() {
+
+  try {
+
+    const { data, error } =
+      await supabase
+
+        .schema('public')
+
+        .from('product_master')
+
+        .select(`
+          erp_sku,
+          erp_status,
+          type,
+          fabric,
+          color,
+          work
+        `)
+
+        .limit(50000);
+
+    if (error) {
+
+      console.error(
+        'Product Master Fetch Error:',
+        error
+      );
+
+      return [];
+    }
+
+    return data || [];
+
+  } catch (err) {
+
+    console.error(err);
+
+    return [];
+  }
+}
+
+/* =========================
    FC STOCK
 ========================= */
 
@@ -143,10 +237,12 @@ export async function fetchFcStock() {
 
   try {
 
-    const { data: latestDateData } =
+    /* LATEST DATE */
+
+    const latestResult =
       await supabase
 
-        .schema('marketplace')
+        .schema('inventory')
 
         .from('fc_stock')
 
@@ -158,18 +254,31 @@ export async function fetchFcStock() {
 
         .limit(1);
 
+    if (latestResult.error) {
+
+      console.error(
+        'FC Latest Date Error:',
+        latestResult.error
+      );
+
+      return [];
+    }
+
     const latestDate =
-      latestDateData?.[0]?.date;
+      latestResult
+        ?.data?.[0]?.date;
 
     if (!latestDate) {
 
       return [];
     }
 
+    /* STOCK FETCH */
+
     const { data, error } =
       await supabase
 
-        .schema('marketplace')
+        .schema('inventory')
 
         .from('fc_stock')
 
@@ -211,10 +320,12 @@ export async function fetchRatings() {
 
   try {
 
-    const { data: latestDateData } =
+    /* LATEST DATE */
+
+    const latestResult =
       await supabase
 
-        .schema('marketplace')
+        .schema('quality')
 
         .from('ratings')
 
@@ -226,18 +337,31 @@ export async function fetchRatings() {
 
         .limit(1);
 
+    if (latestResult.error) {
+
+      console.error(
+        'Ratings Latest Date Error:',
+        latestResult.error
+      );
+
+      return [];
+    }
+
     const latestDate =
-      latestDateData?.[0]?.date;
+      latestResult
+        ?.data?.[0]?.date;
 
     if (!latestDate) {
 
       return [];
     }
 
+    /* RATINGS FETCH */
+
     const { data, error } =
       await supabase
 
-        .schema('marketplace')
+        .schema('quality')
 
         .from('ratings')
 
