@@ -6,6 +6,8 @@ import {
 
   fetchListingMapping,
 
+  fetchProductMaster,
+
   fetchFcStock,
 
   fetchRatings
@@ -69,6 +71,8 @@ export async function initializeDashboardPage() {
 
     mapping,
 
+    productMaster,
+
     fcStock,
 
     ratings
@@ -81,6 +85,8 @@ export async function initializeDashboardPage() {
 
     fetchListingMapping(),
 
+    fetchProductMaster(),
+
     fetchFcStock(),
 
     fetchRatings()
@@ -91,6 +97,9 @@ export async function initializeDashboardPage() {
   store.returns = returns;
 
   store.mapping = mapping;
+
+  store.productMaster =
+    productMaster;
 
   store.fcStock = fcStock;
 
@@ -104,6 +113,8 @@ export async function initializeDashboardPage() {
       returns,
 
       mapping,
+
+      productMaster,
 
       fcStock,
 
