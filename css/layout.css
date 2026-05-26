@@ -1,0 +1,16 @@
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+}
+
+#app{
+  padding:16px;
+}
+
+#reportContainer{
+  background:var(--card);
+  border-radius:16px;
+  padding:16px;
+  min-height:500px;
+}
