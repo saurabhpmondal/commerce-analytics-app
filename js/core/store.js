@@ -1,4 +1,14 @@
 export const store = {
 
-  rawData: []
+  rawData: [],
+
+  sales: [],
+
+  returns: [],
+
+  mapping: [],
+
+  fcStock: [],
+
+  ratings: []
 };
