@@ -1,11 +1,103 @@
 import { state }
 from '../../core/state.js';
 
+function getCurrentMonth() {
+
+  const now = new Date();
+
+  return now.getMonth() + 1;
+}
+
+function getCurrentYear() {
+
+  const now = new Date();
+
+  return now.getFullYear();
+}
+
+function getLastMonth() {
+
+  const now = new Date();
+
+  return now.getMonth();
+}
+
+function getLastMonthYear() {
+
+  const now = new Date();
+
+  return now.getMonth() === 0
+
+    ? now.getFullYear() - 1
+
+    : now.getFullYear();
+}
+
 export function getFilteredData(data) {
 
   let filtered = [...data];
 
-  /* BRAND */
+  /* =========================
+     DATE FILTER
+  ========================= */
+
+  if (
+    state.filters.dateRange ===
+    'This Month'
+  ) {
+
+    filtered = filtered.filter(
+      row => {
+
+        if (!row.month) return false;
+
+        const date =
+          new Date(row.month);
+
+        return (
+
+          date.getMonth() + 1 ===
+          getCurrentMonth()
+
+          &&
+
+          date.getFullYear() ===
+          getCurrentYear()
+        );
+      }
+    );
+  }
+
+  if (
+    state.filters.dateRange ===
+    'Last Month'
+  ) {
+
+    filtered = filtered.filter(
+      row => {
+
+        if (!row.month) return false;
+
+        const date =
+          new Date(row.month);
+
+        return (
+
+          date.getMonth() + 1 ===
+          getLastMonth()
+
+          &&
+
+          date.getFullYear() ===
+          getLastMonthYear()
+        );
+      }
+    );
+  }
+
+  /* =========================
+     BRAND
+  ========================= */
 
   if (
     state.filters.brand !==
@@ -19,7 +111,9 @@ export function getFilteredData(data) {
     );
   }
 
-  /* ARTICLE TYPE */
+  /* =========================
+     ARTICLE TYPE
+  ========================= */
 
   if (
     state.filters.articleType !==
@@ -33,7 +127,9 @@ export function getFilteredData(data) {
     );
   }
 
-  /* ERP STATUS */
+  /* =========================
+     ERP STATUS
+  ========================= */
 
   if (
     state.filters.erpStatus !==
@@ -42,12 +138,15 @@ export function getFilteredData(data) {
 
     filtered = filtered.filter(
       row =>
+
         row.erp_status ===
         state.filters.erpStatus
     );
   }
 
-  /* SEARCH */
+  /* =========================
+     SEARCH
+  ========================= */
 
   if (
     state.filters.search.trim()
