@@ -6,6 +6,8 @@ export function buildDashboardDataset({
 
   mapping,
 
+  productMaster,
+
   fcStock,
 
   ratings
@@ -83,7 +85,20 @@ export function buildDashboardDataset({
   });
 
   /* =========================
-     MAPPING MAP
+     PRODUCT MASTER MAP
+  ========================= */
+
+  const productMap = {};
+
+  productMaster.forEach(row => {
+
+    productMap[
+      String(row.erp_sku)
+    ] = row;
+  });
+
+  /* =========================
+     LISTING MAP
   ========================= */
 
   const mappingMap = {};
@@ -104,35 +119,40 @@ export function buildDashboardDataset({
     const styleId =
       String(row.style_id);
 
-    const mapData =
+    const listing =
       mappingMap[styleId] || {};
+
+    const product =
+      productMap[
+        listing.erp_sku
+      ] || {};
 
     const stock =
       stockMap[styleId] || {};
 
     return {
 
-      month:
+      order_date:
         row.order_date,
 
       style_id:
         styleId,
 
       erp_sku:
-        mapData.erp_sku || '',
+        listing.erp_sku || '',
 
       brand:
         row.brand ||
-        mapData.brand ||
+        listing.brand ||
         '',
 
       article_type:
         row.article_type ||
-        mapData.article_type ||
+        listing.article_type ||
         '',
 
       erp_status:
-        mapData.erp_status || '',
+        product.erp_status || '',
 
       total_units:
         Number(row.qty || 0),
